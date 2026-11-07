@@ -34,3 +34,11 @@ variable "web_target_group_arn" {
 variable "app_target_group_arn" {
   type = string
 }
+variable "private_alb_dns_name" {
+  description = "DNS name of the internal application load balancer"
+  type        = string
+}
+variable "ssm_instance_profile_name" {
+  description = "IAM instance profile for Systems Manager access"
+  type        = string
+}

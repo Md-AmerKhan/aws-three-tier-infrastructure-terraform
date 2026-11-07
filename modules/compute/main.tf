@@ -1,6 +1,6 @@
 
 resource "aws_instance" "web" {
-  count = 2
+  count = 1
 
   ami                         = var.ami_id
   instance_type               = var.instance_type
@@ -12,13 +12,50 @@ resource "aws_instance" "web" {
   user_data_replace_on_change = true
 
   user_data = <<-EOF
-    #!/bin/bash
-    amazon-linux-extras install nginx1 -y
-    systemctl enable nginx
-    systemctl start nginx
-    echo "<h1>Web Server ${count.index + 1}</h1>" > /usr/share/nginx/html/index.html
-  EOF
+  #!/bin/bash
+  amazon-linux-extras install nginx1 -y
 
+  cat > /etc/nginx/nginx.conf <<'NGINX'
+  user nginx;
+  worker_processes auto;
+  error_log /var/log/nginx/error.log;
+  pid /run/nginx.pid;
+
+  events {
+      worker_connections 1024;
+  }
+
+  http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      server {
+          listen 80 default_server;
+          server_name _;
+
+          location / {
+              root /usr/share/nginx/html;
+              index index.html;
+          }
+
+          location = /app {
+              return 301 /app/;
+          }
+
+          location /app/ {
+              proxy_pass http://${var.private_alb_dns_name}/;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          }
+      }
+  }
+  NGINX
+
+  echo "<h1>Web Server ${count.index + 1}</h1>" > /usr/share/nginx/html/index.html
+
+  nginx -t && systemctl enable nginx && systemctl restart nginx
+EOF
   tags = {
     Name = "terraform-3tier-web-${count.index + 1}"
     Tier = "Web"
@@ -33,6 +70,7 @@ resource "aws_instance" "app" {
   subnet_id                   = var.private_subnet_ids[count.index + 2]
   vpc_security_group_ids      = [var.app_sg_id]
   key_name                    = var.ssh_key_name
+  iam_instance_profile        = var.ssm_instance_profile_name
   associate_public_ip_address = false
 
   user_data_replace_on_change = true
@@ -57,6 +95,7 @@ resource "aws_instance" "database" {
   subnet_id                   = var.private_subnet_ids[4]
   vpc_security_group_ids      = [var.database_sg_id]
   key_name                    = var.ssh_key_name
+  iam_instance_profile        = var.ssm_instance_profile_name
   associate_public_ip_address = false
 
   user_data_replace_on_change = true
@@ -75,7 +114,7 @@ resource "aws_instance" "database" {
 }
 
 resource "aws_lb_target_group_attachment" "web" {
-  count = 2
+  count = 1
 
   target_group_arn = var.web_target_group_arn
   target_id        = aws_instance.web[count.index].id

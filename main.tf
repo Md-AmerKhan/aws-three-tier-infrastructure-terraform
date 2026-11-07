@@ -46,13 +46,15 @@ module "load_balancers" {
 module "compute" {
   source = "./modules/compute"
 
-  ami_id               = var.ami_id
-  instance_type        = var.instance_type
-  ssh_key_name         = var.ssh_key_name
-  private_subnet_ids   = module.vpc.private_subnet_ids
-  web_sg_id            = module.security_groups.web_sg_id
-  app_sg_id            = module.security_groups.app_sg_id
-  database_sg_id       = module.security_groups.database_sg_id
-  web_target_group_arn = module.load_balancers.web_target_group_arn
-  app_target_group_arn = module.load_balancers.app_target_group_arn
+  ami_id                    = var.ami_id
+  instance_type             = var.instance_type
+  ssh_key_name              = var.ssh_key_name
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  web_sg_id                 = module.security_groups.web_sg_id
+  app_sg_id                 = module.security_groups.app_sg_id
+  database_sg_id            = module.security_groups.database_sg_id
+  web_target_group_arn      = module.load_balancers.web_target_group_arn
+  app_target_group_arn      = module.load_balancers.app_target_group_arn
+  private_alb_dns_name      = module.load_balancers.private_alb_dns_name
+  ssm_instance_profile_name = aws_iam_instance_profile.ssm_profile.name
 }
