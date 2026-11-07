@@ -1,0 +1,28 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive variables
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Credentials and keys
+*.pem
+*.key
+.aws/
+.env
+.env.*
+
+# macOS and editor files
+.DS_Store
+.vscode/
+.idea/
